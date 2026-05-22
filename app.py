@@ -1,6 +1,8 @@
 import streamlit as st
 from PIL import Image
 
+from ocr_utils import extract_text_from_image
+
 
 st.set_page_config(
     page_title="CapBox",
@@ -17,13 +19,13 @@ def main():
         """
         CapBox는 스크린샷 이미지에서 텍스트를 추출하고,
         나중에 검색어로 저장된 내용을 다시 찾을 수 있도록 돕는 웹앱입니다.
-
-        현재 단계에서는 전체 기능 구현 전,
-        화면 구조와 이미지 업로드 흐름을 먼저 구성합니다.
         """
     )
 
     st.divider()
+
+    if "ocr_text" not in st.session_state:
+        st.session_state.ocr_text = ""
 
     left_col, right_col = st.columns([1, 1])
 
@@ -36,27 +38,39 @@ def main():
         )
 
         if uploaded_file is not None:
-            image = Image.open(uploaded_file)
+            image = Image.open(uploaded_file).convert("RGB")
             st.image(image, caption="업로드한 이미지", use_container_width=True)
+
+            if st.button("OCR 실행"):
+                with st.spinner("이미지에서 텍스트를 추출하는 중입니다..."):
+                    extracted_text = extract_text_from_image(image)
+
+                if extracted_text:
+                    st.session_state.ocr_text = extracted_text
+                    st.success("텍스트 추출이 완료되었습니다.")
+                else:
+                    st.session_state.ocr_text = ""
+                    st.warning("이미지에서 텍스트를 추출하지 못했습니다. 직접 입력하거나 다른 이미지를 사용해주세요.")
         else:
             st.info("아직 업로드된 이미지가 없습니다.")
 
     with right_col:
         st.header("2. OCR 결과 확인")
 
-        st.text_area(
-            "추출된 텍스트가 이곳에 표시될 예정입니다.",
-            value="",
-            height=250,
-            placeholder="OCR 기능 구현 후 이미지 속 텍스트가 여기에 표시됩니다.",
+        edited_text = st.text_area(
+            "추출된 텍스트를 확인하고 필요하면 수정하세요.",
+            value=st.session_state.ocr_text,
+            height=300,
+            placeholder="OCR 실행 후 이미지 속 텍스트가 여기에 표시됩니다.",
         )
 
-        st.text_input(
+        title = st.text_input(
             "저장 제목",
             placeholder="예: 과제 안내 스크린샷",
         )
 
         st.button("저장하기", disabled=True)
+        st.caption("저장 기능은 다음 단계에서 구현할 예정입니다.")
 
     st.divider()
 
