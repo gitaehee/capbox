@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image
 
+from db import init_db, save_archive, get_all_archives
 from ocr_utils import extract_text_from_image
 
 
@@ -12,6 +13,8 @@ st.set_page_config(
 
 
 def main():
+    init_db()
+
     st.title("📦 CapBox")
     st.subheader("스크린샷 텍스트 아카이빙 서비스")
 
@@ -50,7 +53,10 @@ def main():
                     st.success("텍스트 추출이 완료되었습니다.")
                 else:
                     st.session_state.ocr_text = ""
-                    st.warning("이미지에서 텍스트를 추출하지 못했습니다. 직접 입력하거나 다른 이미지를 사용해주세요.")
+                    st.warning(
+                        "이미지에서 텍스트를 추출하지 못했습니다. "
+                        "직접 입력하거나 다른 이미지를 사용해주세요."
+                    )
         else:
             st.info("아직 업로드된 이미지가 없습니다.")
 
@@ -69,13 +75,27 @@ def main():
             placeholder="예: 과제 안내 스크린샷",
         )
 
-        st.button("저장하기", disabled=True)
-        st.caption("저장 기능은 다음 단계에서 구현할 예정입니다.")
+        if st.button("저장하기"):
+            try:
+                save_archive(title, edited_text)
+                st.success("아카이브가 저장되었습니다.")
+                st.session_state.ocr_text = ""
+                st.rerun()
+            except ValueError as error:
+                st.warning(str(error))
 
     st.divider()
 
     st.header("3. 저장된 아카이브 목록")
-    st.info("DB 저장 기능 구현 후 저장된 텍스트 목록이 표시됩니다.")
+
+    archives = get_all_archives()
+
+    if not archives:
+        st.info("아직 저장된 항목이 없습니다.")
+    else:
+        for archive in archives:
+            with st.expander(f"{archive['title']}  |  {archive['created_at']}"):
+                st.write(archive["content"])
 
     st.divider()
 
@@ -85,7 +105,7 @@ def main():
         placeholder="예: 바이브코딩 과제 조건",
     )
     st.button("검색하기", disabled=True)
-    st.info("검색 기능 구현 후 유사한 아카이브 결과가 표시됩니다.")
+    st.info("검색 기능은 다음 단계에서 구현할 예정입니다.")
 
 
 if __name__ == "__main__":
