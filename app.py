@@ -3,6 +3,7 @@ from PIL import Image
 
 from db import init_db, save_archive, get_all_archives
 from ocr_utils import extract_text_from_image
+from search_utils import keyword_search
 
 
 st.set_page_config(
@@ -100,12 +101,27 @@ def main():
     st.divider()
 
     st.header("4. 검색")
-    st.text_input(
+
+    search_query = st.text_input(
         "검색어를 입력하세요.",
         placeholder="예: 바이브코딩 과제 조건",
     )
-    st.button("검색하기", disabled=True)
-    st.info("검색 기능은 다음 단계에서 구현할 예정입니다.")
+
+    if st.button("검색하기"):
+        if not search_query.strip():
+            st.warning("검색어를 입력해주세요.")
+        else:
+            archives = get_all_archives()
+            search_results = keyword_search(search_query, archives)
+
+            if not search_results:
+                st.info("관련 결과가 없습니다.")
+            else:
+                st.success(f"{len(search_results)}개의 결과를 찾았습니다.")
+
+                for result in search_results:
+                    with st.expander(f"{result['title']}  |  {result['created_at']}"):
+                        st.write(result["content"])
 
 
 if __name__ == "__main__":
