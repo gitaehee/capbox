@@ -1,3 +1,6 @@
 streamlit
 pillow
 easyocr
+sentence-transformers
+scikit-learn
+numpy

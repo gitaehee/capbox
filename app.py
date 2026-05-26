@@ -3,7 +3,7 @@ from PIL import Image
 
 from db import init_db, save_archive, get_all_archives
 from ocr_utils import extract_text_from_image
-from search_utils import keyword_search
+from search_utils import keyword_search, semantic_search
 
 
 st.set_page_config(
@@ -102,6 +102,12 @@ def main():
 
     st.header("4. 검색")
 
+    search_type = st.radio(
+        "검색 방식",
+        ["키워드 검색", "유사도 검색"],
+        horizontal=True,
+    )
+
     search_query = st.text_input(
         "검색어를 입력하세요.",
         placeholder="예: 바이브코딩 과제 조건",
@@ -112,7 +118,12 @@ def main():
             st.warning("검색어를 입력해주세요.")
         else:
             archives = get_all_archives()
-            search_results = keyword_search(search_query, archives)
+
+            if search_type == "키워드 검색":
+                search_results = keyword_search(search_query, archives)
+            else:
+                with st.spinner("유사도 검색을 수행하는 중입니다..."):
+                    search_results = semantic_search(search_query, archives)
 
             if not search_results:
                 st.info("관련 결과가 없습니다.")
@@ -120,7 +131,16 @@ def main():
                 st.success(f"{len(search_results)}개의 결과를 찾았습니다.")
 
                 for result in search_results:
-                    with st.expander(f"{result['title']}  |  {result['created_at']}"):
+                    if "similarity" in result:
+                        title = (
+                            f"{result['title']}  |  "
+                            f"유사도: {result['similarity']:.3f}  |  "
+                            f"{result['created_at']}"
+                        )
+                    else:
+                        title = f"{result['title']}  |  {result['created_at']}"
+
+                    with st.expander(title):
                         st.write(result["content"])
 
 
