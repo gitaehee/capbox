@@ -1,10 +1,10 @@
 """
 검색 기능을 담당하는 모듈입니다.
 
-키워드 기반 검색과 유사도 기반 검색을 제공합니다.
+키워드 검색, 유사도 검색, 하이브리드 검색을 제공합니다.
 """
 
-from typing import List, Dict
+from typing import Dict, List
 
 import streamlit as st
 from sentence_transformers import SentenceTransformer
@@ -35,22 +35,21 @@ def keyword_search(query: str, archives: List[Dict]) -> List[Dict]:
         content = archive["content"].lower()
 
         if normalized_query in title or normalized_query in content:
-            results.append(archive)
+            result = archive.copy()
+            result["search_type"] = "키워드 검색"
+            result["similarity"] = 1.0
+            results.append(result)
 
     return results
 
 
-def semantic_search(query: str, archives: List[Dict], threshold: float = 0.45) -> List[Dict]:
+def semantic_search(
+    query: str,
+    archives: List[Dict],
+    threshold: float = 0.5,
+) -> List[Dict]:
     """
     검색어와 저장된 텍스트 간 의미적 유사도를 계산하여 관련 결과를 반환합니다.
-
-    Args:
-        query: 사용자가 입력한 검색어
-        archives: 저장된 아카이브 목록
-        threshold: 검색 결과로 인정할 최소 유사도
-
-    Returns:
-        유사도 점수가 포함된 검색 결과 목록
     """
     query = query.strip()
 
@@ -75,8 +74,26 @@ def semantic_search(query: str, archives: List[Dict], threshold: float = 0.45) -
         if score >= threshold:
             result = archive.copy()
             result["similarity"] = float(score)
+            result["search_type"] = "유사도 검색"
             results.append(result)
 
     results.sort(key=lambda item: item["similarity"], reverse=True)
 
     return results
+
+
+def hybrid_search(
+    query: str,
+    archives: List[Dict],
+    threshold: float = 0.5,
+) -> List[Dict]:
+    """
+    키워드 검색 결과를 우선 반환하고,
+    키워드 검색 결과가 없을 때 유사도 검색을 수행합니다.
+    """
+    keyword_results = keyword_search(query, archives)
+
+    if keyword_results:
+        return keyword_results
+
+    return semantic_search(query, archives, threshold=threshold)
