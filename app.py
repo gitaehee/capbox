@@ -3,8 +3,7 @@ from PIL import Image
 
 from db import init_db, save_archive, get_all_archives
 from ocr_utils import extract_text_from_image
-from search_utils import keyword_search, semantic_search
-
+from search_utils import keyword_search, semantic_search, hybrid_search
 
 st.set_page_config(
     page_title="CapBox",
@@ -104,7 +103,7 @@ def main():
 
     search_type = st.radio(
         "검색 방식",
-        ["키워드 검색", "유사도 검색"],
+        ["하이브리드 검색", "키워드 검색", "유사도 검색"],
         horizontal=True,
     )
 
@@ -121,9 +120,14 @@ def main():
 
             if search_type == "키워드 검색":
                 search_results = keyword_search(search_query, archives)
-            else:
+
+            elif search_type == "유사도 검색":
                 with st.spinner("유사도 검색을 수행하는 중입니다..."):
                     search_results = semantic_search(search_query, archives)
+
+            else:
+                with st.spinner("하이브리드 검색을 수행하는 중입니다..."):
+                    search_results = hybrid_search(search_query, archives)
 
             if not search_results:
                 st.info("관련 결과가 없습니다.")
@@ -131,16 +135,17 @@ def main():
                 st.success(f"{len(search_results)}개의 결과를 찾았습니다.")
 
                 for result in search_results:
-                    if "similarity" in result:
-                        title = (
-                            f"{result['title']}  |  "
-                            f"유사도: {result['similarity']:.3f}  |  "
-                            f"{result['created_at']}"
-                        )
-                    else:
-                        title = f"{result['title']}  |  {result['created_at']}"
+                    search_label = result.get("search_type", "검색")
+                    similarity = result.get("similarity")
 
-                    with st.expander(title):
+                    expander_title = (
+                        f"{result['title']} | "
+                        f"{search_label} | "
+                        f"점수: {similarity:.3f} | "
+                        f"{result['created_at']}"
+                    )
+
+                    with st.expander(expander_title):
                         st.write(result["content"])
 
 
