@@ -87,6 +87,7 @@ def main():
     st.divider()
 
     st.header("3. 저장된 아카이브 목록")
+    st.caption("저장된 OCR 텍스트를 최신순으로 확인할 수 있습니다.")
 
     archives = get_all_archives()
 
@@ -101,10 +102,10 @@ def main():
 
     st.header("4. 검색")
 
-    search_type = st.radio(
-        "검색 방식",
-        ["하이브리드 검색", "키워드 검색", "유사도 검색"],
-        horizontal=True,
+    st.caption(
+        "키워드 검색은 정확한 단어가 포함된 결과를 찾고, "
+        "유사도 검색은 의미적으로 비슷한 내용을 찾습니다. "
+        "하이브리드 검색은 키워드 검색을 먼저 수행한 뒤 결과가 없을 때 유사도 검색을 수행합니다."
     )
 
     search_query = st.text_input(
