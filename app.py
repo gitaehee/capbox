@@ -34,11 +34,15 @@ def main():
 
     with left_col:
         st.header("1. 스크린샷 업로드")
+        st.caption("스크린샷 이미지를 선택하거나 드래그 앤 드롭으로 업로드합니다.")
 
         uploaded_file = st.file_uploader(
             "스크린샷 이미지를 업로드하세요.",
             type=["png", "jpg", "jpeg"],
+            help="파일 선택 버튼을 누르거나 이미지를 이 영역에 드래그 앤 드롭할 수 있습니다.",
         )
+
+        st.caption("PNG, JPG, JPEG 이미지를 직접 선택하거나 드래그해서 업로드할 수 있습니다.")
 
         if uploaded_file is not None:
             image = Image.open(uploaded_file).convert("RGB")
